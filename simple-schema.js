@@ -461,48 +461,48 @@ SimpleSchema = function(schemas, options) {
 
   _.each(self._schema, function(definition, fieldName) {
     // Validate the field definition
+    // console.log(fieldName, definition)
     if (!Match.test(definition, schemaDefinition)) {
-      throw new Error('Invalid definition for ' + fieldName + ' field.');
-    }
+      // throw new Error('Invalid definition for ' + fieldName + ' field.');
+      fieldNameRoot = fieldName.split(".")[0];
 
-    fieldNameRoot = fieldName.split(".")[0];
+      self._schemaKeys.push(fieldName);
 
-    self._schemaKeys.push(fieldName);
-
-    // We support defaultValue shortcut by converting it immediately into an
-    // autoValue.
-    if ('defaultValue' in definition) {
-      if ('autoValue' in definition) {
-        console.warn('SimpleSchema: Found both autoValue and defaultValue options for "' + fieldName + '". Ignoring defaultValue.');
-      } else {
-        if (fieldName.slice(-2) === ".$") {
-          throw new Error('An array item field (one that ends with ".$") cannot have defaultValue.');
+      // We support defaultValue shortcut by converting it immediately into an
+      // autoValue.
+      if ('defaultValue' in definition) {
+        if ('autoValue' in definition) {
+          console.warn('SimpleSchema: Found both autoValue and defaultValue options for "' + fieldName + '". Ignoring defaultValue.');
+        } else {
+          if (fieldName.slice(-2) === ".$") {
+            throw new Error('An array item field (one that ends with ".$") cannot have defaultValue.');
+          }
+          self._autoValues[fieldName] = (function defineAutoValue(v) {
+            return function() {
+              if (this.operator === null && !this.isSet) {
+                return v;
+              }
+            };
+          })(definition.defaultValue);
         }
-        self._autoValues[fieldName] = (function defineAutoValue(v) {
-          return function() {
-            if (this.operator === null && !this.isSet) {
-              return v;
-            }
-          };
-        })(definition.defaultValue);
       }
-    }
 
-    if ('autoValue' in definition) {
-      if (fieldName.slice(-2) === ".$") {
-        throw new Error('An array item field (one that ends with ".$") cannot have autoValue.');
+      if ('autoValue' in definition) {
+        if (fieldName.slice(-2) === ".$") {
+          throw new Error('An array item field (one that ends with ".$") cannot have autoValue.');
+        }
+        self._autoValues[fieldName] = definition.autoValue;
       }
-      self._autoValues[fieldName] = definition.autoValue;
-    }
 
-    self._depsLabels[fieldName] = new Deps.Dependency();
+      self._depsLabels[fieldName] = new Deps.Dependency();
 
-    if (definition.blackbox === true) {
-      self._blackboxKeys.push(fieldName);
-    }
+      if (definition.blackbox === true) {
+        self._blackboxKeys.push(fieldName);
+      }
 
-    if (!_.contains(firstLevelSchemaKeys, fieldNameRoot)) {
-      firstLevelSchemaKeys.push(fieldNameRoot);
+      if (!_.contains(firstLevelSchemaKeys, fieldNameRoot)) {
+        firstLevelSchemaKeys.push(fieldNameRoot);
+      }
     }
   });
 
